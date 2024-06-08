@@ -1,0 +1,102 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'chat_screen.dart';
+import 'profile_screen.dart';
+
+class ChatRoomsScreen extends StatelessWidget {
+  final TextEditingController _controller = TextEditingController();
+
+  void _createChatRoom(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Create Chat Room'),
+        content: TextField(
+          controller: _controller,
+          decoration: InputDecoration(labelText: 'Chat Room Name'),
+        ),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+            },
+          ),
+          TextButton(
+            child: Text('Create'),
+            onPressed: () {
+              final chatRoomName = _controller.text.trim();
+              if (chatRoomName.isNotEmpty) {
+                FirebaseFirestore.instance.collection('chat_rooms').add({
+                  'name': chatRoomName,
+                  'createdAt': Timestamp.now(),
+                }).then((value) {
+                  _controller.clear();
+                  Navigator.of(ctx).pop();
+                }).catchError((error) {
+                  print("Failed to create chat room: $error");
+                });
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Chats'),
+        backgroundColor: Theme.of(context).primaryColor,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () => _createChatRoom(context),
+          ),
+        ],
+      ),
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance.collection('chat_rooms').snapshots(),
+        builder: (ctx, AsyncSnapshot<QuerySnapshot> chatRoomsSnapshot) {
+          if (chatRoomsSnapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (!chatRoomsSnapshot.hasData || chatRoomsSnapshot.data == null) {
+            return Center(child: Text('No chat rooms available.'));
+          }
+          final chatRoomsDocs = chatRoomsSnapshot.data!.docs;
+          return ListView.builder(
+            itemCount: chatRoomsDocs.length,
+            itemBuilder: (ctx, index) {
+              final chatRoomData = chatRoomsDocs[index].data() as Map<String, dynamic>;
+              final chatRoomId = chatRoomsDocs[index].id;
+              final chatRoomName = chatRoomData['name'] ?? 'Unnamed Room';
+              return ListTile(
+                title: Text(chatRoomName),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ChatScreen(chatRoomId: chatRoomId),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
