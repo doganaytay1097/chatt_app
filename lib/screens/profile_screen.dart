@@ -1,3 +1,5 @@
+import 'package:chatt_app/constants/colors.dart';
+import 'package:chatt_app/constants/styles.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -138,8 +140,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isCurrentUser = _auth.currentUser?.uid == widget.userId;
     return Scaffold(
       appBar: AppBar(
-        title: Text('User Profile'),
-        backgroundColor: Theme.of(context).primaryColor,
+        title: Text('User Profile', style: TextStyles.font18White500Weight),
+        backgroundColor: ColorsManager.appBarBackgroundColor,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -160,12 +162,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             TextField(
               controller: _usernameController,
-              decoration: InputDecoration(labelText: 'Username'),
+              decoration: InputDecoration(labelText: 'Username', labelStyle: TextStyles.font16Grey400Weight),
               readOnly: !isCurrentUser,
             ),
             TextField(
               controller: _statusController,
-              decoration: InputDecoration(labelText: 'Status'),
+              decoration: InputDecoration(labelText: 'Status', labelStyle: TextStyles.font16Grey400Weight),
               readOnly: !isCurrentUser,
             ),
             if (isCurrentUser)
@@ -173,7 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (isCurrentUser)
               ElevatedButton(
                 onPressed: _updateProfile,
-                child: Text('Update Profile'),
+                child: Text('Update Profile', style: TextStyles.font16White600Weight),
               ),
           ],
         ),

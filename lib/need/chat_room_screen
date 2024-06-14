@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';  // Add this import
 import 'chat_screen.dart';
 import 'profile_screen.dart';
 
@@ -56,7 +57,7 @@ class ChatRoomsScreen extends StatelessWidget {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => ProfileScreen(),
+                  builder: (context) => ProfileScreen(userId: FirebaseAuth.instance.currentUser!.uid),  // FirebaseAuth used here
                 ),
               );
             },

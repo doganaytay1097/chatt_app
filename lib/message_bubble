@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'constants/colors.dart';
+import 'constants/text_styles.dart';
 
 class MessageBubble extends StatelessWidget {
   final String message;
-  final String username;
-  final String avatarUrl;
   final bool isMe;
 
-  MessageBubble(this.message, this.username, this.avatarUrl, this.isMe);
+  MessageBubble(this.message, this.isMe);
 
   @override
   Widget build(BuildContext context) {
@@ -15,11 +15,11 @@ class MessageBubble extends StatelessWidget {
       children: [
         if (!isMe)
           CircleAvatar(
-            backgroundImage: NetworkImage(avatarUrl.isNotEmpty ? avatarUrl : 'https://example.com/default_avatar.png'),
+            child: Text(message[0]), // Placeholder for avatar
           ),
         Container(
           decoration: BoxDecoration(
-            color: isMe ? Colors.grey[300] : Theme.of(context).colorScheme.secondary,
+            color: isMe ? ColorsManager.gray400 : ColorsManager.greenPrimary,
             borderRadius: BorderRadius.circular(12),
           ),
           width: 200,
@@ -29,24 +29,15 @@ class MessageBubble extends StatelessWidget {
             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               Text(
-                username,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isMe ? Colors.black : Theme.of(context).textTheme.bodyText1!.color,
-                ),
-              ),
-              Text(
                 message,
-                style: TextStyle(
-                  color: isMe ? Colors.black : Theme.of(context).textTheme.bodyText1!.color,
-                ),
+                style: isMe ? TextStyles.font14DarkBlue500Weight : TextStyles.font16White600Weight,
               ),
             ],
           ),
         ),
         if (isMe)
           CircleAvatar(
-            backgroundImage: NetworkImage(avatarUrl.isNotEmpty ? avatarUrl : 'https://example.com/default_avatar.png'),
+            child: Text(message[0]), // Placeholder for avatar
           ),
       ],
     );

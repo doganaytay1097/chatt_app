@@ -1,3 +1,5 @@
+import 'package:chatt_app/constants/colors.dart';
+import 'package:chatt_app/constants/styles.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -42,7 +44,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       if (authResult.user != null) {
-        Navigator.of(context).pushReplacementNamed('/chat-rooms');
+        Navigator.of(context).pushReplacementNamed('/user-list');
       }
     } on FirebaseAuthException catch (e) {
       var message = 'An error occurred, please check your credentials!';
@@ -72,8 +74,8 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('WhatsApp Clone'),
-        backgroundColor: Theme.of(context).primaryColor,
+        title: Text('WhatsApp Clone', style: TextStyles.font18White500Weight),
+        backgroundColor: ColorsManager.appBarBackgroundColor,
       ),
       body: Center(
         child: Card(
@@ -86,16 +88,16 @@ class _AuthScreenState extends State<AuthScreen> {
                 if (!_isLogin)
                   TextField(
                     controller: _nameController,
-                    decoration: InputDecoration(labelText: 'Username'),
+                    decoration: InputDecoration(labelText: 'Username', labelStyle: TextStyles.font16Grey400Weight),
                   ),
                 TextField(
                   controller: _emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
+                  decoration: InputDecoration(labelText: 'Email', labelStyle: TextStyles.font16Grey400Weight),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 TextField(
                   controller: _passwordController,
-                  decoration: InputDecoration(labelText: 'Password'),
+                  decoration: InputDecoration(labelText: 'Password', labelStyle: TextStyles.font16Grey400Weight),
                   obscureText: true,
                 ),
                 SizedBox(height: 12),
@@ -104,7 +106,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 if (!_isLoading)
                   ElevatedButton(
                     onPressed: _submitAuthForm,
-                    child: Text(_isLogin ? 'Login' : 'Signup'),
+                    child: Text(_isLogin ? 'Login' : 'Signup', style: TextStyles.font16White600Weight),
                   ),
                 TextButton(
                   onPressed: () {
@@ -112,7 +114,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       _isLogin = !_isLogin;
                     });
                   },
-                  child: Text(_isLogin ? 'Create new account' : 'I already have an account'),
+                  child: Text(_isLogin ? 'Create new account' : 'I already have an account', style: TextStyles.font16Grey400Weight),
                 ),
               ],
             ),
