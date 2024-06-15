@@ -14,7 +14,7 @@ class UserListScreen extends StatelessWidget {
       backgroundColor: ColorsManager.backgroundDefaultColor,
       appBar: AppBar(
         title: Text('Users', style: TextStyles.font18White500Weight),
-        backgroundColor: ColorsManager.appBarBackgroundColor,
+        backgroundColor: Colors.teal,
         actions: [
           IconButton(
             icon: Icon(Icons.person, color: Colors.white),
@@ -63,6 +63,7 @@ class UserListScreen extends StatelessWidget {
                 radius: 25,
                  ),
                 title: Text(userData['username'], style: TextStyles.font13Green500Weight),
+                subtitle: Text(userData['status'], style: TextStyles.font10Green300Weight),
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(

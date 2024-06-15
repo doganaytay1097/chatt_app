@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_bubbles/bubbles/bubble_normal_image.dart';
 import 'package:chat_bubbles/bubbles/bubble_special_three.dart';
 import 'package:chatt_app/database.dart';
-import 'package:chatt_app/helpers/extension.dart';
 import 'package:chatt_app/helpers/notification_service.dart';
 import 'package:chatt_app/helpers/notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -95,7 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   : context.tr('offline'),
               style: TextStyle(
                 fontSize: 13.sp,
-                color: const Color.fromARGB(255, 179, 178, 178),
+                color: const Color.fromARGB(255, 200, 210, 100),
               ),
             ),
           ],
@@ -211,35 +210,66 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void scrollToDown() {
-    _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent + 90.h,
-      duration: const Duration(seconds: 1),
-      curve: Curves.fastOutSlowIn,
-    );
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(seconds: 1),
+        curve: Curves.fastOutSlowIn,
+      );
+    }
   }
 
   Future showOptions() async {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => CupertinoActionSheet(
-        actions: [
-          CupertinoActionSheetAction(
-            child: Text(context.tr('photoGallery')),
-            onPressed: () {
-              context.pop();
-              getImageFromGallery();
-            },
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      showCupertinoModalPopup(
+        context: context,
+        builder: (context) => CupertinoActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              child: Text(context.tr('photoGallery')),
+              onPressed: () {
+                Navigator.pop(context);
+                getImageFromGallery();
+              },
+            ),
+            CupertinoActionSheetAction(
+              child: Text(context.tr('camera')),
+              onPressed: () {
+                Navigator.pop(context);
+                getImageFromCamera();
+              },
+            ),
+          ],
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text(context.tr('photoGallery')),
+                onTap: () {
+                  Navigator.pop(context);
+                  getImageFromGallery();
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text(context.tr('camera')),
+                onTap: () {
+                  Navigator.pop(context);
+                  getImageFromCamera();
+                },
+              ),
+            ],
           ),
-          CupertinoActionSheetAction(
-            child: Text(context.tr('camera')),
-            onPressed: () {
-              context.pop();
-              getImageFromCamera();
-            },
-          ),
-        ],
-      ),
-    );
+        ),
+      );
+    }
   }
 
   Widget _buildMessageInput() {
@@ -256,12 +286,12 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: TextField(
                 controller: _messageController,
-                style: TextStyle(color: Colors.white), // Metin rengini beyaz yapar
+                style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: context.tr('message'),
-                  hintStyle: TextStyle(color: Colors.white70), // İpucu metin rengini beyaz yapar
+                  hintStyle: TextStyle(color: Colors.white70),
                   filled: true,
-                  fillColor: Colors.black26, // Arka plan rengini biraz daha koyu yapar
+                  fillColor: Colors.black26,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30.0),
                     borderSide: BorderSide.none,
@@ -299,6 +329,7 @@ class _ChatScreenState extends State<ChatScreen> {
         List<DocumentSnapshot> messageDocs = snapshot.data!.docs;
 
         return ListView.builder(
+          reverse: false,
           controller: _scrollController,
           itemCount: messageDocs.length,
           itemBuilder: (context, index) {
@@ -327,7 +358,7 @@ class _ChatScreenState extends State<ChatScreen> {
         if (isNewDay)
           CustomDateChip(
             date: data['timestamp'].toDate(),
-            textStyle: TextStyle(color: Colors.white), // Beyaz yazı rengi
+            textStyle: TextStyle(color: Colors.white),
           ),
         if (data['message'].contains('https://'))
           BubbleNormalImage(
@@ -360,7 +391,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ? true
                     : false,
             textStyle: TextStyle(
-              color: Colors.white, // Metin rengi beyaz
+              color: Colors.white,
             ),
           ),
       ],

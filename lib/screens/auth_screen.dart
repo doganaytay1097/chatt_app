@@ -74,10 +74,11 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: ColorsManager.backgroundDefaultColor,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text('WhatsApp Clone', style: TextStyles.font18White500Weight),
-        backgroundColor: ColorsManager.appBarBackgroundColor,
+        backgroundColor: Colors.teal,
       ),
       body: Center(
         child: Card(
@@ -119,7 +120,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       _isLogin = !_isLogin;
                     });
                   },
-                  child: Text(_isLogin ? 'Create new account' : 'I already have an account', style: TextStyles.font16Grey400Weight),
+                  child: Text(_isLogin ? 'Create new account' : 'I already have an account',
+                  style: TextStyles.font16Grey400Weight),
                 ),
               ],
             ),
