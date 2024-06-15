@@ -3,6 +3,7 @@ import 'package:chatt_app/screens/chat_screen.dart';
 import 'package:chatt_app/screens/display_picture_screen.dart';
 import 'package:chatt_app/screens/user_list_screen.dart';
 import 'package:flutter/material.dart';
+
 class Routes {
   static const String authScreen = '/';
   static const String userListScreen = '/user-list';

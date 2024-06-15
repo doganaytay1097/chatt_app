@@ -10,4 +10,7 @@ class ColorsManager {
   static const Color backgroundDefaultColor = Color(0xff111b21);
   static const Color greenPrimary = Color(0xff00a884);
   static const Color appBarBackgroundColor = Color(0xff202c33);
+  static const Color darkGreenColor = Color(0xff006400);
+
+  
 }

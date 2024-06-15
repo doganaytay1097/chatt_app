@@ -139,6 +139,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final isCurrentUser = _auth.currentUser?.uid == widget.userId;
     return Scaffold(
+      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.white70,
       appBar: AppBar(
         title: Text('User Profile', style: TextStyles.font18White500Weight),
         backgroundColor: ColorsManager.appBarBackgroundColor,
@@ -156,18 +158,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             if (isCurrentUser)
               TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red
+                ),
                 icon: Icon(Icons.image),
                 label: Text('Change Image'),
                 onPressed: _showImagePickerOptions,
               ),
             TextField(
               controller: _usernameController,
-              decoration: InputDecoration(labelText: 'Username', labelStyle: TextStyles.font16Grey400Weight),
+              decoration: InputDecoration(labelText: 'Username', labelStyle: TextStyles.font15Green500Weight),
               readOnly: !isCurrentUser,
             ),
             TextField(
               controller: _statusController,
-              decoration: InputDecoration(labelText: 'Status', labelStyle: TextStyles.font16Grey400Weight),
+              decoration: InputDecoration(labelText: 'Status', labelStyle: TextStyles.font15Green500Weight),
               readOnly: !isCurrentUser,
             ),
             if (isCurrentUser)
@@ -175,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (isCurrentUser)
               ElevatedButton(
                 onPressed: _updateProfile,
-                child: Text('Update Profile', style: TextStyles.font16White600Weight),
+                child: Text('Update Profile', style: TextStyles.font15Green500Weight),
               ),
           ],
         ),

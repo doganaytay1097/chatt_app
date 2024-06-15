@@ -55,6 +55,12 @@ class TextStyles {
     color: ColorsManager.greenPrimary,
   );
 
+  static TextStyle font13Green500Weight = TextStyle(
+    fontSize: 13.sp,
+    fontWeight: FontWeight.w500,
+    color: ColorsManager.greenPrimary,
+  );
+
   static TextStyle font11MediumLightShadeOfGray400Weight = TextStyle(
     fontSize: 11.sp,
     fontWeight: FontWeight.w400,

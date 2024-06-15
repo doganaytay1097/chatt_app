@@ -16,6 +16,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   bool _isLoading = false;
+  final String defaultAvatarUrl = '';
 
   void _submitAuthForm() async {
     UserCredential authResult;
@@ -38,7 +39,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await FirebaseFirestore.instance.collection('users').doc(authResult.user!.uid).set({
           'username': _nameController.text.trim(),
           'email': _emailController.text.trim(),
-          'avatarUrl': 'https://example.com/default_avatar.png',
+          'avatarUrl': null,
           'status': 'Hey there! I am using ChatApp',
         });
       }
@@ -73,6 +74,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text('WhatsApp Clone', style: TextStyles.font18White500Weight),
         backgroundColor: ColorsManager.appBarBackgroundColor,
@@ -105,6 +107,9 @@ class _AuthScreenState extends State<AuthScreen> {
                   CircularProgressIndicator(),
                 if (!_isLoading)
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorsManager.coralRed,
+                    ),
                     onPressed: _submitAuthForm,
                     child: Text(_isLogin ? 'Login' : 'Signup', style: TextStyles.font16White600Weight),
                   ),

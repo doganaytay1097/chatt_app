@@ -1,21 +1,22 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chat_bubbles/chat_bubbles.dart';
-import 'package:chatt_app/constants/styles.dart';
+import 'package:chat_bubbles/bubbles/bubble_normal_image.dart';
+import 'package:chat_bubbles/bubbles/bubble_special_three.dart';
 import 'package:chatt_app/database.dart';
 import 'package:chatt_app/helpers/extension.dart';
 import 'package:chatt_app/helpers/notification_service.dart';
 import 'package:chatt_app/helpers/notifications.dart';
-import 'package:chatt_app/helpers/routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
   final String receivedUserName;
@@ -23,14 +24,15 @@ class ChatScreen extends StatefulWidget {
   final String receivedMToken;
   final String active;
   final String? receivedUserProfilePic;
+
   const ChatScreen({
-    super.key,
+    Key? key,
     required this.receivedUserName,
     required this.receivedUserID,
     required this.receivedMToken,
     required this.active,
     required this.receivedUserProfilePic,
-  });
+  }) : super(key: key);
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -41,16 +43,16 @@ class _ChatScreenState extends State<ChatScreen> {
   final _auth = FirebaseAuth.instance;
   final _scrollController = ScrollController();
   late String? token;
-  TextAlign textAlign = TextAlign.start;
-
+  final TextEditingController _messageController = TextEditingController();
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
   final _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.teal,
         leadingWidth: 85.w,
         leading: InkWell(
           borderRadius: BorderRadius.circular(50),
@@ -60,7 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Gap(10.w),
               Icon(Icons.arrow_back_ios, size: 25.sp),
               widget.receivedUserProfilePic != null &&
-                      widget.receivedUserProfilePic != ''
+                      widget.receivedUserProfilePic!.isNotEmpty
                   ? Hero(
                       tag: widget.receivedUserProfilePic!,
                       child: ClipOval(
@@ -107,57 +109,13 @@ class _ChatScreenState extends State<ChatScreen> {
             fit: BoxFit.cover,
           ),
         ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.w),
-          child: Column(
-            children: [
-              Expanded(
-                child: _buildMessagesList(),
-              ),
-              MessageBar(
-                messageBarHintText: context.tr('message'),
-                messageBarHintStyle: TextStyles.font14Grey400Weight,
-                messageBarColor: Colors.transparent,
-                onSend: (message) async {
-                  User? currentUser = _auth.currentUser;
-                  String senderName = currentUser?.displayName ?? 'Unknown';
-                  await DatabaseMethods.sendMessage(
-                    message,
-                    widget.receivedUserID,
-                  );
-                  scrollToDown();
-                  await _chatService.sendPushMessage(
-                    widget.receivedMToken,
-                    message,
-                    senderName,
-                    currentUser!.uid,
-                    currentUser.photoURL,
-                  );
-                },
-                actions: [
-                  Padding(
-                    padding: context.locale.toString() == 'ar'
-                        ? EdgeInsets.only(left: 4.w)
-                        : EdgeInsets.only(right: 4.w),
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xff00a884),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.black,
-                          size: 28,
-                        ),
-                        onPressed: () => showOptions(),
-                      ),
-                    ),
-                  )
-                ],
-              )
-            ],
-          ),
+        child: Column(
+          children: [
+            Expanded(
+              child: _buildMessagesList(),
+            ),
+            _buildMessageInput(),
+          ],
         ),
       ),
     );
@@ -166,37 +124,64 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _messageController.dispose();
     super.dispose();
   }
 
-  // Image Picker function to get image from camera
+  Future<void> sendMessage(String message) async {
+    User? currentUser = _auth.currentUser;
+    String senderName = currentUser?.displayName ?? 'Unknown';
+
+    await DatabaseMethods.sendMessage(
+      message,
+      widget.receivedUserID,
+    );
+    _messageController.clear();
+    scrollToDown();
+
+    await _chatService.sendPushMessage(
+      widget.receivedMToken,
+      message,
+      senderName,
+      currentUser!.uid,
+      currentUser.photoURL,
+    );
+  }
+
+  Future<void> uploadImage(File image) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('chat_images')
+          .child(DateTime.now().toIso8601String() + '.jpg');
+
+      await ref.putFile(image);
+      final url = await ref.getDownloadURL();
+      await sendMessage(url);
+    } catch (error) {
+      print('Error uploading image: $error');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to upload image.'),
+      ));
+    }
+  }
+
   Future getImageFromCamera() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {
-      if (!mounted) return;
-
-      context.pushNamed(Routes.displayPictureScreen, arguments: [
-        pickedFile,
-        token!,
-        widget.receivedMToken,
-        widget.receivedUserID,
-      ]);
+      await uploadImage(File(pickedFile.path));
     }
   }
 
-  // Image Picker function to get image from gallery
   Future getImageFromGallery() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
-      if (!mounted) return;
-      context.pushNamed(Routes.displayPictureScreen, arguments: [
-        pickedFile,
-        token!,
-        widget.receivedMToken,
-        widget.receivedUserID,
-      ]);
+      await uploadImage(File(pickedFile.path));
     }
   }
 
@@ -214,7 +199,6 @@ class _ChatScreenState extends State<ChatScreen> {
       await HelperNotification.initialize(flutterLocalNotificationsPlugin);
     });
     getToken();
-    // listen for messages when the app is in the foreground
     FirebaseMessaging.onMessage.listen(
       (RemoteMessage message) {
         HelperNotification.showNotification(
@@ -224,11 +208,6 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       },
     );
-  }
-
-  bool isArabic(String text) {
-    bool bidi = Bidi.hasAnyRtl(text);
-    return bidi;
   }
 
   void scrollToDown() {
@@ -263,28 +242,98 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageItem(DocumentSnapshot snapshot,
-      DocumentSnapshot? previousMessage, DocumentSnapshot? nextMessage) {
+  Widget _buildMessageInput() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8.0),
+      child: Container(
+        color: Colors.teal,
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.photo_camera, color: Colors.white),
+              onPressed: () => showOptions(),
+            ),
+            Expanded(
+              child: TextField(
+                controller: _messageController,
+                style: TextStyle(color: Colors.white), // Metin rengini beyaz yapar
+                decoration: InputDecoration(
+                  hintText: context.tr('message'),
+                  hintStyle: TextStyle(color: Colors.white70), // İpucu metin rengini beyaz yapar
+                  filled: true,
+                  fillColor: Colors.black26, // Arka plan rengini biraz daha koyu yapar
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.send, color: Colors.white),
+              onPressed: () async {
+                if (_messageController.text.isNotEmpty) {
+                  await sendMessage(_messageController.text);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessagesList() {
+    Stream<QuerySnapshot<Object?>> allMessages =
+        DatabaseMethods.getMessages(widget.receivedUserID, _auth.currentUser!.uid);
+
+    return StreamBuilder(
+      stream: allMessages,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text(snapshot.error.toString());
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        List<DocumentSnapshot> messageDocs = snapshot.data!.docs;
+
+        return ListView.builder(
+          controller: _scrollController,
+          itemCount: messageDocs.length,
+          itemBuilder: (context, index) {
+            DocumentSnapshot currentMessage = messageDocs[index];
+            DocumentSnapshot? previousMessage =
+                index > 0 ? messageDocs[index - 1] : null;
+            DocumentSnapshot? nextMessage =
+                index < messageDocs.length - 1 ? messageDocs[index + 1] : null;
+
+            return _buildMessageItem(currentMessage, previousMessage, nextMessage);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMessageItem(DocumentSnapshot snapshot, DocumentSnapshot? previousMessage, DocumentSnapshot? nextMessage) {
     Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
 
-    // Check if the current message is from a different day than the previous one
     bool isNewDay = previousMessage == null ||
-        !_isSameDay(
-            data['timestamp'].toDate(), previousMessage['timestamp'].toDate());
-    bool isNewSender =
-        nextMessage == null || data['senderID'] != nextMessage['senderID'];
+        !_isSameDay(data['timestamp'].toDate(), previousMessage['timestamp'].toDate());
+    bool isNewSender = nextMessage == null || data['senderID'] != nextMessage['senderID'];
+
     return Column(
       children: [
         if (isNewDay)
-          DateChip(
+          CustomDateChip(
             date: data['timestamp'].toDate(),
-            color: const Color(0xff273443),
+            textStyle: TextStyle(color: Colors.white), // Beyaz yazı rengi
           ),
         if (data['message'].contains('https://'))
           BubbleNormalImage(
             id: data['timestamp'].toDate().toString(),
             tail: isNewSender,
-            isSender: data['senderID'] == _auth.currentUser!.uid ? true : false,
+            isSender: data['senderID'] == _auth.currentUser!.uid,
             color: data['senderID'] == _auth.currentUser!.uid
                 ? const Color.fromARGB(255, 0, 107, 84)
                 : const Color(0xff273443),
@@ -310,42 +359,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 : context.locale.languageCode == 'ar'
                     ? true
                     : false,
+            textStyle: TextStyle(
+              color: Colors.white, // Metin rengi beyaz
+            ),
           ),
       ],
-    );
-  }
-
-  Widget _buildMessagesList() {
-    late Stream<QuerySnapshot<Object?>> allMessages =
-        DatabaseMethods.getMessages(
-            widget.receivedUserID, _auth.currentUser!.uid);
-
-    return StreamBuilder(
-      stream: allMessages,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Text(snapshot.error.toString());
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        List<DocumentSnapshot> messageDocs = snapshot.data!.docs;
-
-        return ListView.builder(
-          controller: _scrollController,
-          itemCount: messageDocs.length,
-          itemBuilder: (context, index) {
-            DocumentSnapshot currentMessage = messageDocs[index];
-            DocumentSnapshot? previousMessage =
-                index > 0 ? messageDocs[index - 1] : null;
-            DocumentSnapshot? nextMessage =
-                index < messageDocs.length - 1 ? messageDocs[index + 1] : null;
-
-            return _buildMessageItem(
-                currentMessage, previousMessage, nextMessage);
-          },
-        );
-      },
     );
   }
 
@@ -353,5 +371,32 @@ class _ChatScreenState extends State<ChatScreen> {
     return timestamp1.year == timestamp2.year &&
         timestamp1.month == timestamp2.month &&
         timestamp1.day == timestamp2.day;
+  }
+}
+
+class CustomDateChip extends StatelessWidget {
+  final DateTime date;
+  final TextStyle textStyle;
+
+  const CustomDateChip({
+    Key? key,
+    required this.date,
+    required this.textStyle,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 10.0),
+      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      decoration: BoxDecoration(
+        color: const Color(0xff273443),
+        borderRadius: BorderRadius.circular(16.0),
+      ),
+      child: Text(
+        DateFormat('MMM d, yyyy').format(date),
+        style: textStyle,
+      ),
+    );
   }
 }

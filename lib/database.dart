@@ -5,11 +5,11 @@ import 'message.dart';
 class DatabaseMethods {
   static Future<void> sendMessage(String message, String receiverID) async {
     final senderID = FirebaseAuth.instance.currentUser!.uid;
-    final senderName = FirebaseAuth.instance.currentUser!.displayName;
+    final senderName = FirebaseAuth.instance.currentUser!.displayName ?? 'Unknown';
     final timestamp = Timestamp.now();
     final newMessage = Message(
       senderID: senderID,
-      senderName: senderName!,
+      senderName: senderName,
       message: message,
       receiverID: receiverID,
       timestamp: timestamp,
@@ -30,7 +30,7 @@ class DatabaseMethods {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .orderBy('timestamp', descending: true)
+        .orderBy('timestamp', descending: false) // Display messages in chronological order
         .snapshots();
   }
 
